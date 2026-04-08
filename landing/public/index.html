@@ -5,16 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XCrab — The World's Pulse, Instantly</title>
   <style>
+    /* Clash Display */
+    @font-face {
+      font-family: 'Clash Display';
+      src: url('//cdn.fontshare.com/wf/2GQIT54GKQY3JRFTSHS4ARTRNRQISSAA/3CIP5EBHRRHE5FVQU3VFROPUERNDSTDF/JTSL5QESUXATU47LCPUNHZQBDDIWDOSW.woff2') format('woff2'),
+           url('//cdn.fontshare.com/wf/2GQIT54GKQY3JRFTSHS4ARTRNRQISSAA/3CIP5EBHRRHE5FVQU3VFROPUERNDSTDF/JTSL5QESUXATU47LCPUNHZQBDDIWDOSW.woff') format('woff'),
+           url('//cdn.fontshare.com/wf/2GQIT54GKQY3JRFTSHS4ARTRNRQISSAA/3CIP5EBHRRHE5FVQU3VFROPUERNDSTDF/JTSL5QESUXATU47LCPUNHZQBDDIWDOSW.ttf') format('truetype');
+      font-weight: 500;
+      font-display: swap;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Clash Display';
+      src: url('//cdn.fontshare.com/wf/FPDAZ2S6SW4QMSRIIKNNGTPM6VIXYMKO/5HNPQ453FRLIQWV2FNOBUU3FKTDZQVSG/Z3MGHFHX6DCTLQ55LJYRJ5MDCZPMFZU6.woff2') format('woff2'),
+           url('//cdn.fontshare.com/wf/FPDAZ2S6SW4QMSRIIKNNGTPM6VIXYMKO/5HNPQ453FRLIQWV2FNOBUU3FKTDZQVSG/Z3MGHFHX6DCTLQ55LJYRJ5MDCZPMFZU6.woff') format('woff'),
+           url('//cdn.fontshare.com/wf/FPDAZ2S6SW4QMSRIIKNNGTPM6VIXYMKO/5HNPQ453FRLIQWV2FNOBUU3FKTDZQVSG/Z3MGHFHX6DCTLQ55LJYRJ5MDCZPMFZU6.ttf') format('truetype');
+      font-weight: 600;
+      font-display: swap;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Clash Display';
+      src: url('//cdn.fontshare.com/wf/BFBSY7LX5W2U2EROCLVVTQP4VS7S4PC3/IIUX4FGTMD2LK2VWD3RVTAS4SSMUN7B5/53RZKGODFYDW3QHTIL7IPOWTBCSUEZK7.woff2') format('woff2'),
+           url('//cdn.fontshare.com/wf/BFBSY7LX5W2U2EROCLVVTQP4VS7S4PC3/IIUX4FGTMD2LK2VWD3RVTAS4SSMUN7B5/53RZKGODFYDW3QHTIL7IPOWTBCSUEZK7.woff') format('woff'),
+           url('//cdn.fontshare.com/wf/BFBSY7LX5W2U2EROCLVVTQP4VS7S4PC3/IIUX4FGTMD2LK2VWD3RVTAS4SSMUN7B5/53RZKGODFYDW3QHTIL7IPOWTBCSUEZK7.ttf') format('truetype');
+      font-weight: 700;
+      font-display: swap;
+      font-style: normal;
+    }
+
+    /* Satoshi */
+    @font-face {
+      font-family: 'Satoshi';
+      src: url('//cdn.fontshare.com/wf/TTX2Z3BF3P6Y5BQT3IV2VNOK6FL22KUT/7QYRJOI3JIMYHGY6CH7SOIFRQLZOLNJ6/KFIAZD4RUMEZIYV6FQ3T3GP5PDBDB6JY.woff2') format('woff2'),
+           url('//cdn.fontshare.com/wf/TTX2Z3BF3P6Y5BQT3IV2VNOK6FL22KUT/7QYRJOI3JIMYHGY6CH7SOIFRQLZOLNJ6/KFIAZD4RUMEZIYV6FQ3T3GP5PDBDB6JY.woff') format('woff'),
+           url('//cdn.fontshare.com/wf/TTX2Z3BF3P6Y5BQT3IV2VNOK6FL22KUT/7QYRJOI3JIMYHGY6CH7SOIFRQLZOLNJ6/KFIAZD4RUMEZIYV6FQ3T3GP5PDBDB6JY.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Satoshi';
+      src: url('//cdn.fontshare.com/wf/P2LQKHE6KA6ZP4AAGN72KDWMHH6ZH3TA/ZC32TK2P7FPS5GFTL46EU6KQJA24ZYDB/7AHDUZ4A7LFLVFUIFSARGIWCRQJHISQP.woff2') format('woff2'),
+           url('//cdn.fontshare.com/wf/P2LQKHE6KA6ZP4AAGN72KDWMHH6ZH3TA/ZC32TK2P7FPS5GFTL46EU6KQJA24ZYDB/7AHDUZ4A7LFLVFUIFSARGIWCRQJHISQP.woff') format('woff'),
+           url('//cdn.fontshare.com/wf/P2LQKHE6KA6ZP4AAGN72KDWMHH6ZH3TA/ZC32TK2P7FPS5GFTL46EU6KQJA24ZYDB/7AHDUZ4A7LFLVFUIFSARGIWCRQJHISQP.ttf') format('truetype');
+      font-weight: 500;
+      font-display: swap;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Satoshi';
+      src: url('//cdn.fontshare.com/wf/LAFFD4SDUCDVQEXFPDC7C53EQ4ZELWQI/PXCT3G6LO6ICM5I3NTYENYPWJAECAWDD/GHM6WVH6MILNYOOCXHXB5GTSGNTMGXZR.woff2') format('woff2'),
+           url('//cdn.fontshare.com/wf/LAFFD4SDUCDVQEXFPDC7C53EQ4ZELWQI/PXCT3G6LO6ICM5I3NTYENYPWJAECAWDD/GHM6WVH6MILNYOOCXHXB5GTSGNTMGXZR.woff') format('woff'),
+           url('//cdn.fontshare.com/wf/LAFFD4SDUCDVQEXFPDC7C53EQ4ZELWQI/PXCT3G6LO6ICM5I3NTYENYPWJAECAWDD/GHM6WVH6MILNYOOCXHXB5GTSGNTMGXZR.ttf') format('truetype');
+      font-weight: 700;
+      font-display: swap;
+      font-style: normal;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+      font-family: 'Satoshi', ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
       color: #1a1a1a;
       background: #fff;
       -webkit-font-smoothing: antialiased;
     }
 
-    a { color: #e63e1c; text-decoration: none; }
+    a { color: #FF6B4A; text-decoration: none; }
     a:hover { text-decoration: underline; }
 
     /* ── Hero ── */
@@ -26,31 +84,46 @@
       justify-content: center;
       text-align: center;
       padding: 60px 24px;
-      background: linear-gradient(180deg, #fff 0%, #fff8f5 100%);
+      background: linear-gradient(180deg, #fff 0%, #FFF5F2 100%);
     }
 
-    .hero-icon { width: 120px; height: 120px; margin-bottom: 24px; object-fit: contain; }
+    .hero-icon { width: 180px; height: 180px; margin-bottom: 24px; object-fit: contain; }
+
+    .hero-brand {
+      font-family: 'Clash Display', sans-serif;
+      font-size: 72px;
+      font-weight: 700;
+      color: #FF6B4A;
+      margin-bottom: 20px;
+      letter-spacing: 0px;
+      line-height: 1;
+    }
 
     .hero h1 {
-      font-size: 48px;
-      font-weight: 800;
-      letter-spacing: -1px;
-      line-height: 1.1;
-      max-width: 600px;
+      font-family: 'Clash Display', sans-serif;
+      font-size: 40px;
+      font-weight: 600;
+      letter-spacing: 0;
+      line-height: 1.2;
+      max-width: 900px;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+      text-transform: uppercase;
     }
 
-    .hero h1 span { color: #e63e1c; }
+    .hero h1 span { color: #FF6B4A; }
 
     .hero .tagline {
+      font-family: 'Satoshi', sans-serif;
       font-size: 20px;
+      font-weight: 400;
       color: #666;
-      margin-top: 16px;
-      max-width: 480px;
+      max-width: 700px;
       line-height: 1.5;
     }
 
     .cta-group {
-      margin-top: 36px;
+      margin-top: 48px;
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
@@ -60,42 +133,42 @@
     .cta {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 14px 28px;
+      gap: 12px;
+      padding: 18px 36px;
       border-radius: 999px;
-      font-size: 16px;
-      font-weight: 600;
+      font-family: 'Satoshi', sans-serif;
+      font-size: 17px;
+      font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
-      border: none;
+      border: 2px solid #e8e8e8;
+      background: #fff;
+      color: #1a1a1a;
     }
 
-    .cta-primary {
-      background: #e63e1c;
-      color: #fff;
-      box-shadow: 0 4px 16px rgba(230, 62, 28, 0.3);
-    }
-    .cta-primary:hover {
-      background: #d03518;
-      box-shadow: 0 8px 24px rgba(230, 62, 28, 0.4);
+    .cta:hover {
+      border-color: #FF6B4A;
+      box-shadow: 0 4px 16px rgba(255, 107, 74, 0.15);
       transform: translateY(-1px);
       text-decoration: none;
     }
 
-    .cta-secondary {
-      background: #fff;
-      color: #1a1a1a;
-      border: 1px solid #ddd;
-    }
-    .cta-secondary:hover {
-      border-color: #e63e1c;
-      color: #e63e1c;
-      text-decoration: none;
+    .cta-badge {
+      background: #FF6B4A;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
     }
 
     .hero-note {
-      margin-top: 16px;
-      font-size: 13px;
+      margin-top: 20px;
+      font-family: 'Satoshi', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
       color: #999;
     }
 
@@ -107,8 +180,9 @@
     }
 
     .features h2 {
-      font-size: 32px;
-      font-weight: 800;
+      font-family: 'Clash Display', sans-serif;
+      font-size: 40px;
+      font-weight: 700;
       text-align: center;
       margin-bottom: 48px;
     }
@@ -126,12 +200,12 @@
       transition: border-color 0.2s, box-shadow 0.2s;
     }
     .feature-card:hover {
-      border-color: #ffd4c8;
-      box-shadow: 0 4px 20px rgba(230, 62, 28, 0.06);
+      border-color: #FFD4C8;
+      box-shadow: 0 4px 20px rgba(255, 107, 74, 0.1);
     }
 
     .feature-card .icon { font-size: 32px; margin-bottom: 12px; }
-    .feature-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card h3 { font-family: 'Satoshi', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; }
     .feature-card p { font-size: 14px; color: #666; line-height: 1.6; }
 
     /* ── How to install ── */
@@ -146,8 +220,9 @@
     }
 
     .install h2 {
-      font-size: 32px;
-      font-weight: 800;
+      font-family: 'Clash Display', sans-serif;
+      font-size: 40px;
+      font-weight: 700;
       text-align: center;
       margin-bottom: 48px;
     }
@@ -171,7 +246,7 @@
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      background: #e63e1c;
+      background: #FF6B4A;
       color: #fff;
       font-weight: 700;
       font-size: 14px;
@@ -180,7 +255,7 @@
       justify-content: center;
     }
 
-    .step-text h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .step-text h3 { font-family: 'Satoshi', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .step-text p { font-size: 14px; color: #666; line-height: 1.5; }
     .step-text code {
       background: #f0f0f0;
@@ -197,33 +272,65 @@
       color: #999;
       border-top: 1px solid #f0f0f0;
     }
-    .footer a { color: #e63e1c; }
+    .footer a { color: #FF6B4A; }
+
+    /* ── Header ── */
+    .header {
+      position: fixed;
+      top: 0;
+      right: 0;
+      padding: 20px 32px;
+      z-index: 1000;
+    }
+
+    .powered-by {
+      font-family: 'Satoshi', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #FF6B4A;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .powered-by:hover {
+      opacity: 0.8;
+      text-decoration: none;
+    }
 
     /* ── Responsive ── */
     @media (max-width: 600px) {
+      .hero-icon { width: 120px; height: 120px; }
+      .hero-brand { font-size: 56px; }
       .hero h1 { font-size: 32px; }
       .hero .tagline { font-size: 17px; }
-      .features h2, .install h2 { font-size: 24px; }
+      .cta { padding: 14px 24px; font-size: 15px; }
+      .features h2, .install h2 { font-size: 28px; }
     }
   </style>
 </head>
 <body>
 
+  <!-- Header -->
+  <header class="header">
+    <a href="https://atypica.ai/" target="_blank" rel="noopener" class="powered-by">
+      Powered by atypica.ai
+    </a>
+  </header>
+
   <!-- Hero -->
   <section class="hero">
     <img src="crab-logo.jpg" alt="XCrab" class="hero-icon">
-    <h1>The World's <span>Pulse</span>, Instantly</h1>
-    <p class="tagline">
-      Every trending topic on X, ranked by heat — delivered to your browser's side panel. No scrolling, no noise, just signal.
-    </p>
+    <div class="hero-brand">XCrab</div>
+    <h1><span>X</span>'s HOTTEST, RIGHT NOW</h1>
+    <p class="tagline">Every hot topic on X, ranked by heat score — delivered to your browser's side panel. No scrolling, no noise, just signal.</p>
     <div class="cta-group">
-      <a class="cta cta-primary" href="#install">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l4 4 4-4M12 8v8"/></svg>
-        Install XCrab
+      <a class="cta" href="#install">
+        <span class="cta-badge">Free</span>
+        Install Chrome Extension
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
-      <a class="cta cta-secondary" href="#features">Learn more</a>
     </div>
-    <p class="hero-note">Free · Chrome Extension · No account needed</p>
+    <p class="hero-note">No account needed · Works on any tab</p>
   </section>
 
   <!-- Features -->

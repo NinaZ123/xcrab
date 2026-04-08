@@ -1,20 +1,16 @@
 /**
  * XCrab - Background Service Worker
- * Polls Atypica Pulse API, caches to chrome.storage.
+ * Polls xcrab.net public API, caches to chrome.storage.
  */
 
 const DEFAULT_SETTINGS = {
-  apiBase: 'https://atypica.ai/api',
-  apiKey: 'atypica_cdaf9e94e794715bba0663ee87b884dc26b1ac1f4d752b85083ead3cbbe3e26d',
-  locale: '',       // '' = all, 'en-US', 'zh-CN'
-  category: '',     // '' = all
+  apiBase: 'https://xcrab.net',
   limit: 20,
 };
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get('xcrabSettings', (r) => {
-    if (!r.xcrabSettings) chrome.storage.local.set({ xcrabSettings: DEFAULT_SETTINGS });
-  });
+  // Always reset settings to ensure apiBase is correct
+  chrome.storage.local.set({ xcrabSettings: DEFAULT_SETTINGS });
   fetchPulses();
   chrome.alarms.create('poll', { periodInMinutes: 1 });
 });
@@ -38,20 +34,18 @@ async function fetchPulses() {
   try {
     const s = await getSettings();
     const params = new URLSearchParams();
-    params.set('limit', String(s.limit || 20));
-    params.set('orderBy', 'heatDelta');
+    const isZh = s.locale === 'zh-CN';
+    params.set('limit', String(isZh ? Math.min(s.limit || 20, 10) : (s.limit || 20)));
+    params.set('orderBy', s.orderBy || 'heatScore');
     if (s.category) params.set('category', s.category);
+    if (isZh) params.set('lang', 'zh');
 
-    const res = await fetch(`${s.apiBase}/pulse?${params}`, {
-      headers: { 'Authorization': `Bearer ${s.apiKey}` },
-    });
-
+    const url = `${s.apiBase || 'https://xcrab.net'}/api/pulse?${params}`;
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
 
-    if (!json.success) throw new Error(json.message || 'API error');
-
-    const topics = (json.data || []).map((p, i) => ({
+    const topics = (json.topics || []).map((p, i) => ({
       rank: i + 1,
       id: p.id,
       name: p.title,
@@ -60,15 +54,13 @@ async function fetchPulses() {
       heatScore: p.heatScore,
       heatDelta: p.heatDelta,
       createdAt: p.createdAt,
-      locale: p.locale,
-      searchUrl: `https://x.com/search?q=${encodeURIComponent(p.title)}&f=live`,
+      searchUrl: p.searchUrl || `https://x.com/search?q=${encodeURIComponent(p.title)}&f=live`,
     }));
 
-    // Detect hot: any topic with heatDelta > 0.5 in top 3
     const hasHot = topics.slice(0, 3).some(t => t.heatDelta > 0.5);
 
     chrome.storage.local.set({
-      xcrabTrends: { topics, updatedAt: new Date().toISOString(), hasHot, fetchedAt: Date.now() },
+      xcrabTrends: { topics, updatedAt: json.updatedAt || new Date().toISOString(), hasHot, fetchedAt: Date.now() },
       xcrabError: null,
     });
 
@@ -78,15 +70,12 @@ async function fetchPulses() {
     } else {
       chrome.action.setBadgeText({ text: '' });
     }
-
-    console.log(`[XCrab] Fetched ${topics.length} pulses`);
   } catch (err) {
     console.error('[XCrab] Fetch failed:', err.message);
     chrome.storage.local.set({ xcrabError: { message: err.message, at: Date.now() } });
   }
 }
 
-// Click extension icon → open side panel
 chrome.action.onClicked.addListener(async (tab) => {
   await chrome.sidePanel.open({ tabId: tab.id });
 });
@@ -102,7 +91,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (msg.type === 'SAVE_SETTINGS') {
     chrome.storage.local.set({ xcrabSettings: msg.settings }, () => {
-      fetchPulses(); // re-fetch with new settings
+      fetchPulses();
       sendResponse({ success: true });
     });
     return true;

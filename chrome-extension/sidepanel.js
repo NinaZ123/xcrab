@@ -1,68 +1,61 @@
 /**
  * XCrab - Side Panel
- * Reads Pulse data from chrome.storage (populated by background.js).
  */
 
 let allTopics = [];
 let activeCategory = '';
 let currentLocale = '';
+let currentSort = 'heatScore';
 
 function escapeHtml(t) {
   return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function formatHeat(score) {
-  if (!score && score !== 0) return '';
-  return score >= 1000 ? `${(score/1000).toFixed(1)}k` : String(Math.round(score));
+  const n = Number(score);
+  if (!Number.isFinite(n) || n <= 0) return '0';
+  if (n >= 1000) return `${(n/1000).toFixed(1)}k`;
+  return String(Math.round(n));
 }
 
 function formatDate(isoStr) {
   if (!isoStr) return '';
   const d = new Date(isoStr);
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
-  return `${m}/${day}`;
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 function formatDateTime(isoStr) {
   if (!isoStr) return '';
   const d = new Date(isoStr);
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
-  const h = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${m}/${day} ${h}:${min}`;
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
 /* ── i18n ── */
-
-const zhLabels = {
-  all: '全部',
-  loading: '加载中...',
-  noCategory: '该分类暂无热点',
-  noTrends: '暂无热点数据',
-  updated: '更新于',
-  pulses: '条热点',
-  autoTip: '每日自动刷新',
-  poweredBy: '由',
-  poweredByEnd: '提供数据',
+const labels = {
+  'zh-CN': { all:'全部', noCategory:'该分类暂无热点', noTrends:'暂无热点数据', updated:'更新于', pulses:'条热点', autoTip:'每日自动刷新' },
+  en: { all:'All', noCategory:'No trends in this category.', noTrends:'No trends yet.', updated:'Updated', pulses:'pulses', autoTip:'Daily auto-refresh' },
 };
+function t(key) { return (labels[currentLocale] || labels.en)[key] || labels.en[key]; }
 
-const enLabels = {
-  all: 'All',
-  loading: 'Loading...',
-  noCategory: 'No trends in this category.',
-  noTrends: 'No trends yet.',
-  updated: 'Updated',
-  pulses: 'pulses',
-  autoTip: 'Daily auto-refresh',
-  poweredBy: 'Powered by',
-  poweredByEnd: '',
-};
+/* ── Sort ── */
 
-function t(key) {
-  return currentLocale === 'zh-CN' ? zhLabels[key] : enLabels[key];
+const sortHeatBtn = document.getElementById('sortHeat');
+const sortTimeBtn = document.getElementById('sortTime');
+
+function setSort(sort) {
+  currentSort = sort;
+  sortHeatBtn.classList.toggle('active', sort === 'heatScore');
+  sortTimeBtn.classList.toggle('active', sort === 'createdAt');
+  // Save to settings and re-fetch
+  chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (s) => {
+    if (!s) return;
+    s.orderBy = sort;
+    chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: s });
+  });
 }
+
+sortHeatBtn.addEventListener('click', () => setSort('heatScore'));
+sortTimeBtn.addEventListener('click', () => setSort('createdAt'));
 
 /* ── Categories ── */
 
@@ -104,9 +97,15 @@ function renderTrends(topics) {
   listEl.innerHTML = '';
 
   filtered.forEach((topic, i) => {
-    const deltaClass = topic.heatDelta > 0 ? 'heat-up' : 'heat-down';
-    const deltaIcon = topic.heatDelta > 0 ? '↑' : topic.heatDelta < 0 ? '↓' : '→';
-    const deltaStr = topic.heatDelta != null ? `<span class="${deltaClass}">${deltaIcon}${Math.abs(topic.heatDelta).toFixed(2)}</span>` : '';
+    // Delta arrow: only show for significant changes (threshold: ±0.1), no numbers
+    let deltaStr = '';
+    if (topic.heatDelta != null) {
+      if (topic.heatDelta > 0.1) {
+        deltaStr = `<span class="delta-up">↑</span>`;
+      } else if (topic.heatDelta < -0.1) {
+        deltaStr = `<span class="delta-down">↓</span>`;
+      }
+    }
 
     const desc = topic.content ? `<div class="desc">${escapeHtml(topic.content)}</div>` : '';
     const dateStr = topic.createdAt ? `<span class="date-label">${formatDate(topic.createdAt)}</span>` : '';
@@ -119,11 +118,13 @@ function renderTrends(topics) {
         <div class="name">${escapeHtml(topic.name)}</div>
         ${desc}
         <div class="sub">
-          <span class="heat">🔥 ${formatHeat(topic.heatScore)}</span>
           ${deltaStr}
           <span class="tag">${escapeHtml(topic.category)}</span>
           ${dateStr}
         </div>
+      </div>
+      <div class="item-right">
+        <div class="heat-score">🔥 ${formatHeat(topic.heatScore)}</div>
       </div>
     `;
     div.addEventListener('click', () => {
@@ -134,13 +135,13 @@ function renderTrends(topics) {
 }
 
 function updateMeta(data) {
-  const meta = document.getElementById('meta');
-  if (!data) { meta.innerHTML = '<span class="dot err"></span>No data'; return; }
-  const dot = '<span class="dot ok"></span>';
+  const metaLeft = document.querySelector('.meta-left');
+  if (!metaLeft) return;
+  if (!data) { metaLeft.innerHTML = '<span class="dot err"></span>No data'; return; }
   if (data.updatedAt) {
-    meta.innerHTML = `${dot}${t('updated')} ${formatDateTime(data.updatedAt)} · ${data.topics.length} ${t('pulses')}`;
+    metaLeft.innerHTML = `<span class="dot ok"></span>${t('updated')} ${formatDateTime(data.updatedAt)} · ${data.topics.length} ${t('pulses')}`;
   } else {
-    meta.innerHTML = `${dot}Connected`;
+    metaLeft.innerHTML = '<span class="dot ok"></span>Connected';
   }
 }
 
@@ -155,7 +156,8 @@ function loadTrends() {
       renderTrends(allTopics);
       updateMeta(data);
     } else if (result.xcrabError) {
-      document.getElementById('meta').innerHTML = `<span class="dot err"></span>${escapeHtml(result.xcrabError.message)}`;
+      const metaLeft = document.querySelector('.meta-left');
+      if (metaLeft) metaLeft.innerHTML = `<span class="dot err"></span>${escapeHtml(result.xcrabError.message)}`;
       document.getElementById('emptyState').innerHTML = '<div class="empty-icon">⚠️</div>Cannot reach API.';
       document.getElementById('emptyState').style.display = 'block';
       document.getElementById('trendList').innerHTML = '';
@@ -191,38 +193,29 @@ settingsToggle.addEventListener('click', () => {
 function loadSettings() {
   chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (s) => {
     if (!s) return;
-    document.getElementById('apiBase').value = s.apiBase || '';
-    document.getElementById('apiKey').value = s.apiKey || '';
-    document.getElementById('locale').value = s.locale || '';
+    document.getElementById('locale').value = s.locale || 'en-US';
     document.getElementById('limit').value = String(s.limit || 20);
     currentLocale = s.locale || '';
-    applyLocaleUI();
+    currentSort = s.orderBy || 'heatScore';
+    sortHeatBtn.classList.toggle('active', currentSort === 'heatScore');
+    sortTimeBtn.classList.toggle('active', currentSort === 'createdAt');
   });
-}
-
-function applyLocaleUI() {
-  // Update auto-refresh tooltip
-  const tip = document.querySelector('.refresh-tip');
-  if (tip) tip.textContent = t('autoTip');
 }
 
 document.getElementById('saveSettings').addEventListener('click', () => {
   const settings = {
-    apiBase: document.getElementById('apiBase').value.replace(/\/+$/, ''),
-    apiKey: document.getElementById('apiKey').value.trim(),
+    apiBase: 'https://xcrab.net',
     locale: document.getElementById('locale').value,
-    category: '',
     limit: parseInt(document.getElementById('limit').value, 10) || 20,
+    orderBy: currentSort,
   };
   currentLocale = settings.locale;
-  applyLocaleUI();
 
   chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings }, () => {
     const btn = document.getElementById('saveSettings');
     btn.textContent = currentLocale === 'zh-CN' ? '已保存!' : 'Saved!';
     setTimeout(() => { btn.textContent = currentLocale === 'zh-CN' ? '保存设置' : 'Save Settings'; }, 1200);
 
-    // Close settings after save
     settingsOpen = false;
     document.getElementById('trendsView').style.display = 'block';
     document.getElementById('catBar').style.display = 'flex';

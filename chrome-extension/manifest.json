@@ -4,7 +4,7 @@
   "version": "3.0.0",
   "description": "X trending topics tracker powered by Atypica Pulse",
   "permissions": ["storage", "sidePanel", "alarms"],
-  "host_permissions": ["https://atypica.ai/*"],
+  "host_permissions": ["https://xcrab.net/*"],
   "background": {
     "service_worker": "background.js"
   },
