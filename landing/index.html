@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XCrab — The World's Pulse, Instantly</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+      color: #1a1a1a;
+      background: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: #e63e1c; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 24px;
+      background: linear-gradient(180deg, #fff 0%, #fff8f5 100%);
+    }
+
+    .hero-icon { font-size: 72px; margin-bottom: 24px; }
+
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      max-width: 600px;
+    }
+
+    .hero h1 span { color: #e63e1c; }
+
+    .hero .tagline {
+      font-size: 20px;
+      color: #666;
+      margin-top: 16px;
+      max-width: 480px;
+      line-height: 1.5;
+    }
+
+    .cta-group {
+      margin-top: 36px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .cta-primary {
+      background: #e63e1c;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(230, 62, 28, 0.3);
+    }
+    .cta-primary:hover {
+      background: #d03518;
+      box-shadow: 0 8px 24px rgba(230, 62, 28, 0.4);
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+
+    .cta-secondary {
+      background: #fff;
+      color: #1a1a1a;
+      border: 1px solid #ddd;
+    }
+    .cta-secondary:hover {
+      border-color: #e63e1c;
+      color: #e63e1c;
+      text-decoration: none;
+    }
+
+    .hero-note {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #999;
+    }
+
+    /* ── Features ── */
+    .features {
+      padding: 80px 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .features h2 {
+      font-size: 32px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 32px;
+    }
+
+    .feature-card {
+      padding: 28px;
+      border-radius: 16px;
+      border: 1px solid #f0f0f0;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .feature-card:hover {
+      border-color: #ffd4c8;
+      box-shadow: 0 4px 20px rgba(230, 62, 28, 0.06);
+    }
+
+    .feature-card .icon { font-size: 32px; margin-bottom: 12px; }
+    .feature-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: #666; line-height: 1.6; }
+
+    /* ── How to install ── */
+    .install {
+      padding: 80px 24px;
+      background: #fafafa;
+    }
+
+    .install-inner {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .install h2 {
+      font-size: 32px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+    }
+
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 16px;
+      margin-bottom: 28px;
+      align-items: flex-start;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e63e1c;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-text h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .step-text p { font-size: 14px; color: #666; line-height: 1.5; }
+    .step-text code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 40px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+      border-top: 1px solid #f0f0f0;
+    }
+    .footer a { color: #e63e1c; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 32px; }
+      .hero .tagline { font-size: 17px; }
+      .features h2, .install h2 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-icon">🦀</div>
+    <h1>The World's <span>Pulse</span>, Instantly</h1>
+    <p class="tagline">
+      Every trending topic on X, ranked by heat — delivered to your browser's side panel. No scrolling, no noise, just signal.
+    </p>
+    <div class="cta-group">
+      <a class="cta cta-primary" href="#install">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l4 4 4-4M12 8v8"/></svg>
+        Install XCrab
+      </a>
+      <a class="cta cta-secondary" href="#features">Learn more</a>
+    </div>
+    <p class="hero-note">Free · Chrome Extension · No account needed</p>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <h2>Why XCrab?</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">🌍</div>
+        <h3>Global Hotspots, Daily</h3>
+        <p>AI breakthroughs, market shifts, political turning points, viral moments — all ranked by real-time heat score so you see what matters first.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">⚡</div>
+        <h3>Instantly, Always-on</h3>
+        <p>Auto-refreshes throughout the day. Open the side panel on any tab — no need to visit X, no doomscrolling, no noise.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🏷️</div>
+        <h3>Smart Categories</h3>
+        <p>Filter by AI, Science, Business, Global News and more. Focus on what's relevant to you with one click.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔥</div>
+        <h3>Heat Score & Velocity</h3>
+        <p>Every topic comes with a heat score and trend direction — know what's surging vs. fading at a glance.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🧹</div>
+        <h3>Zero Clutter</h3>
+        <p>A clean side panel that stays out of your way. No popups, no overlays, no distractions — just a list of what the world is talking about.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔗</div>
+        <h3>One-click to Source</h3>
+        <p>Click any topic to jump straight to the conversation on X. Join the discourse while it's still forming.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section class="install" id="install">
+    <div class="install-inner">
+      <h2>Install in 30 Seconds</h2>
+      <ol class="steps">
+        <li>
+          <div class="step-text">
+            <h3>Download the extension</h3>
+            <p>Click the button below to download <code>xcrab-extension.zip</code>.</p>
+            <a class="cta cta-primary" href="xcrab-extension.zip" download style="margin-top:12px;display:inline-flex;font-size:14px;padding:10px 20px;">
+              Download .zip
+            </a>
+          </div>
+        </li>
+        <li>
+          <div class="step-text">
+            <h3>Unzip the file</h3>
+            <p>Extract the downloaded zip to a folder on your computer. Remember where you put it.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-text">
+            <h3>Open Chrome Extensions</h3>
+            <p>Go to <code>chrome://extensions</code> in your Chrome browser. Turn on <strong>Developer mode</strong> (toggle in the top right).</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-text">
+            <h3>Load the extension</h3>
+            <p>Click <strong>"Load unpacked"</strong> and select the folder you extracted. XCrab's icon appears in your toolbar.</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-text">
+            <h3>Open the side panel</h3>
+            <p>Click the XCrab icon in your toolbar — the side panel opens with today's hottest topics. That's it. 🦀</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>XCrab · Powered by <a href="https://atypica.ai/pulse" target="_blank">Atypica Pulse</a> · <a href="privacy-policy.html">Privacy Policy</a></p>
+  </footer>
+
+</body>
+</html>
