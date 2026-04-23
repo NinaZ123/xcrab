@@ -49,11 +49,14 @@ async function fetchPulses() {
       rank: i + 1,
       id: p.id,
       name: p.title,
+      titleEn: p.titleEn,
       content: p.content,
       category: p.category,
       heatScore: p.heatScore,
       heatDelta: p.heatDelta,
       createdAt: p.createdAt,
+      opinionSummary: p.opinionSummary || null,
+      sourceUrl: p.sourceUrl || null,
       searchUrl: p.searchUrl || `https://x.com/search?q=${encodeURIComponent(p.title)}&f=live`,
     }));
 

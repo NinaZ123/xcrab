@@ -15,6 +15,28 @@ interface PulseItem {
   createdAt: string;
 }
 
+interface OpinionViewpoint {
+  stance: string;
+  summary: string;
+}
+
+interface OpinionSummary {
+  summary: string;
+  overallSentiment?: "positive" | "negative" | "neutral" | "mixed";
+  keyViewpoints?: OpinionViewpoint[];
+  controversies?: string[];
+  generatedAt?: string;
+}
+
+interface PulseDetailResponse {
+  success: boolean;
+  data: {
+    posts?: Array<Record<string, unknown>>;
+    opinionSummary?: OpinionSummary | null;
+  };
+  message?: string;
+}
+
 interface PulseResponse {
   success: boolean;
   data: PulseItem[];
@@ -30,6 +52,85 @@ const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET",
 };
+
+function normalizeUrl(url: string): string {
+  return url.replace(/\/$/, "");
+}
+
+function extractTwitterSourceUrls(posts: Array<Record<string, unknown>>): string[] {
+  const urlRegex = /https?:\/\/(?:x|twitter)\.com\/[^\s"')\]}]+/gi;
+  const discovered = new Set<string>();
+
+  for (const post of posts) {
+    const payload = JSON.stringify(post);
+    const matches = payload.match(urlRegex);
+    if (!matches) continue;
+    for (const rawUrl of matches) {
+      discovered.add(normalizeUrl(rawUrl));
+    }
+  }
+
+  return [...discovered].sort((left, right) => left.length - right.length);
+}
+
+async function enrichPulseTopic(
+  pulse: {
+    id: number;
+    title: string;
+    content: string;
+    category: string;
+    heatScore: number;
+    heatDelta: number | null;
+    createdAt: string;
+    rank: number;
+  },
+  apiKey: string,
+): Promise<{
+  id: number;
+  title: string;
+  content: string;
+  category: string;
+  heatScore: number;
+  heatDelta: number | null;
+  createdAt: string;
+  rank: number;
+  searchUrl: string;
+  sourceUrl: string | null;
+  opinionSummary: OpinionSummary | null;
+}> {
+  try {
+    const detail = await fetch(`https://atypica.ai/api/pulse/${pulse.id}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    if (!detail.ok) {
+      return {
+        ...pulse,
+        searchUrl: `https://x.com/search?q=${encodeURIComponent(pulse.title)}&f=live`,
+        sourceUrl: null,
+        opinionSummary: null,
+      };
+    }
+
+    const json: PulseDetailResponse = await detail.json();
+    const posts = json.success ? json.data.posts ?? [] : [];
+    const sourceUrl = extractTwitterSourceUrls(posts)[0] ?? null;
+
+    return {
+      ...pulse,
+      searchUrl: `https://x.com/search?q=${encodeURIComponent(pulse.title)}&f=live`,
+      sourceUrl,
+      opinionSummary: json.success ? json.data.opinionSummary ?? null : null,
+    };
+  } catch {
+    return {
+      ...pulse,
+      searchUrl: `https://x.com/search?q=${encodeURIComponent(pulse.title)}&f=live`,
+      sourceUrl: null,
+      opinionSummary: null,
+    };
+  }
+}
 
 export async function GET(req: NextRequest) {
   const apiKey = process.env.ATYPICA_API_KEY;
@@ -82,7 +183,6 @@ export async function GET(req: NextRequest) {
         heatScore: p.heatScore,
         heatDelta: p.heatDelta,
         createdAt: p.createdAt,
-        searchUrl: `https://x.com/search?q=${encodeURIComponent(p.title)}&f=live`,
       }));
 
     // Sort: heatScore desc or createdAt desc
@@ -94,6 +194,8 @@ export async function GET(req: NextRequest) {
 
     // Apply limit and rank
     topics = topics.slice(0, parseInt(limit)).map((t, i) => ({ ...t, rank: i + 1 }));
+
+    topics = await Promise.all(topics.map((topic) => enrichPulseTopic(topic, apiKey)));
 
     // Translate titles if zh
     let translated = false;

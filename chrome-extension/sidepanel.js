@@ -32,8 +32,8 @@ function formatDateTime(isoStr) {
 
 /* ── i18n ── */
 const labels = {
-  'zh-CN': { all:'全部', noCategory:'该分类暂无热点', noTrends:'暂无热点数据', updated:'更新于', pulses:'条热点', autoTip:'每日自动刷新' },
-  en: { all:'All', noCategory:'No trends in this category.', noTrends:'No trends yet.', updated:'Updated', pulses:'pulses', autoTip:'Daily auto-refresh' },
+  'zh-CN': { all:'全部', noCategory:'该分类暂无热点', noTrends:'暂无热点数据', updated:'更新于', pulses:'条热点', autoTip:'每日自动刷新', opinion:'舆论' },
+  en: { all:'All', noCategory:'No trends in this category.', noTrends:'No trends yet.', updated:'Updated', pulses:'pulses', autoTip:'Daily auto-refresh', opinion:'Opinion' },
 };
 function t(key) { return (labels[currentLocale] || labels.en)[key] || labels.en[key]; }
 
@@ -108,6 +108,14 @@ function renderTrends(topics) {
     }
 
     const desc = topic.content ? `<div class="desc">${escapeHtml(topic.content)}</div>` : '';
+    const opinion = topic.opinionSummary?.summary
+      ? `
+        <div class="opinion">
+          <div class="opinion-label">${escapeHtml(t('opinion'))}</div>
+          <div class="opinion-summary">${escapeHtml(topic.opinionSummary.summary)}</div>
+        </div>
+      `
+      : '';
     const dateStr = topic.createdAt ? `<span class="date-label">${formatDate(topic.createdAt)}</span>` : '';
 
     const div = document.createElement('div');
@@ -117,6 +125,7 @@ function renderTrends(topics) {
       <div>
         <div class="name">${escapeHtml(topic.name)}</div>
         ${desc}
+        ${opinion}
         <div class="sub">
           ${deltaStr}
           <span class="tag">${escapeHtml(topic.category)}</span>
@@ -128,7 +137,7 @@ function renderTrends(topics) {
       </div>
     `;
     div.addEventListener('click', () => {
-      chrome.tabs.create({ url: topic.searchUrl });
+      chrome.tabs.create({ url: topic.sourceUrl || topic.searchUrl });
     });
     listEl.appendChild(div);
   });
