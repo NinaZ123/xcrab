@@ -1,16 +1,23 @@
+importScripts('config.js');
+
 /**
  * XCrab - Background Service Worker
  * Polls xcrab.net public API, caches to chrome.storage.
  */
 
 const DEFAULT_SETTINGS = {
-  apiBase: 'https://xcrab.net',
   limit: 20,
 };
 
+async function ensureSettings() {
+  const settings = await getSettings();
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ xcrabSettings: settings }, resolve);
+  });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
-  // Always reset settings to ensure apiBase is correct
-  chrome.storage.local.set({ xcrabSettings: DEFAULT_SETTINGS });
+  ensureSettings();
   fetchPulses();
   chrome.alarms.create('poll', { periodInMinutes: 1 });
 });
@@ -25,12 +32,20 @@ chrome.alarms.onAlarm.addListener((a) => {
 });
 
 async function getSettings() {
+  const defaultBaseUrl = await getBaseUrl();
   return new Promise((resolve) => {
-    chrome.storage.local.get('xcrabSettings', (r) => resolve(r.xcrabSettings || DEFAULT_SETTINGS));
+    chrome.storage.local.get('xcrabSettings', (r) =>
+      resolve({
+        ...DEFAULT_SETTINGS,
+        ...(r.xcrabSettings || {}),
+        apiBase: defaultBaseUrl,
+      })
+    );
   });
 }
 
 async function fetchPulses() {
+  chrome.storage.local.set({ xcrabPending: true });
   try {
     const s = await getSettings();
     const params = new URLSearchParams();
@@ -40,7 +55,7 @@ async function fetchPulses() {
     if (s.category) params.set('category', s.category);
     if (isZh) params.set('lang', 'zh');
 
-    const url = `${s.apiBase || 'https://xcrab.net'}/api/pulse?${params}`;
+    const url = `${s.apiBase}/api/pulse?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
@@ -57,6 +72,7 @@ async function fetchPulses() {
       createdAt: p.createdAt,
       opinionSummary: p.opinionSummary || null,
       sourceUrl: p.sourceUrl || null,
+      sourceUrls: Array.isArray(p.sourceUrls) ? p.sourceUrls : (p.sourceUrl ? [p.sourceUrl] : []),
       searchUrl: p.searchUrl || `https://x.com/search?q=${encodeURIComponent(p.title)}&f=live`,
     }));
 
@@ -65,6 +81,7 @@ async function fetchPulses() {
     chrome.storage.local.set({
       xcrabTrends: { topics, updatedAt: json.updatedAt || new Date().toISOString(), hasHot, fetchedAt: Date.now() },
       xcrabError: null,
+      xcrabPending: false,
     });
 
     if (hasHot) {
@@ -75,7 +92,10 @@ async function fetchPulses() {
     }
   } catch (err) {
     console.error('[XCrab] Fetch failed:', err.message);
-    chrome.storage.local.set({ xcrabError: { message: err.message, at: Date.now() } });
+    chrome.storage.local.set({
+      xcrabError: { message: err.message, at: Date.now() },
+      xcrabPending: false,
+    });
   }
 }
 
@@ -93,7 +113,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
   if (msg.type === 'SAVE_SETTINGS') {
-    chrome.storage.local.set({ xcrabSettings: msg.settings }, () => {
+    const nextSettings = { ...msg.settings };
+    delete nextSettings.apiBase;
+    chrome.storage.local.set({ xcrabSettings: nextSettings }, () => {
       fetchPulses();
       sendResponse({ success: true });
     });

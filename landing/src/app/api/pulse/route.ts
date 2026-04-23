@@ -53,6 +53,10 @@ const CORS = {
   "Access-Control-Allow-Methods": "GET",
 };
 
+function getUpstreamBaseUrl(): string {
+  return (process.env.ATYPICA_API_BASE_URL || "https://atypica.ai").replace(/\/$/, "");
+}
+
 function normalizeUrl(url: string): string {
   return url.replace(/\/$/, "");
 }
@@ -85,6 +89,7 @@ async function enrichPulseTopic(
     rank: number;
   },
   apiKey: string,
+  upstreamBaseUrl: string,
 ): Promise<{
   id: number;
   title: string;
@@ -96,10 +101,11 @@ async function enrichPulseTopic(
   rank: number;
   searchUrl: string;
   sourceUrl: string | null;
+  sourceUrls: string[];
   opinionSummary: OpinionSummary | null;
 }> {
   try {
-    const detail = await fetch(`https://atypica.ai/api/pulse/${pulse.id}`, {
+    const detail = await fetch(`${upstreamBaseUrl}/api/pulse/${pulse.id}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
 
@@ -108,18 +114,21 @@ async function enrichPulseTopic(
         ...pulse,
         searchUrl: `https://x.com/search?q=${encodeURIComponent(pulse.title)}&f=live`,
         sourceUrl: null,
+        sourceUrls: [],
         opinionSummary: null,
       };
     }
 
     const json: PulseDetailResponse = await detail.json();
     const posts = json.success ? json.data.posts ?? [] : [];
-    const sourceUrl = extractTwitterSourceUrls(posts)[0] ?? null;
+    const sourceUrls = extractTwitterSourceUrls(posts);
+    const sourceUrl = sourceUrls[0] ?? null;
 
     return {
       ...pulse,
       searchUrl: `https://x.com/search?q=${encodeURIComponent(pulse.title)}&f=live`,
       sourceUrl,
+      sourceUrls,
       opinionSummary: json.success ? json.data.opinionSummary ?? null : null,
     };
   } catch {
@@ -127,6 +136,7 @@ async function enrichPulseTopic(
       ...pulse,
       searchUrl: `https://x.com/search?q=${encodeURIComponent(pulse.title)}&f=live`,
       sourceUrl: null,
+      sourceUrls: [],
       opinionSummary: null,
     };
   }
@@ -134,6 +144,7 @@ async function enrichPulseTopic(
 
 export async function GET(req: NextRequest) {
   const apiKey = process.env.ATYPICA_API_KEY;
+  const upstreamBaseUrl = getUpstreamBaseUrl();
   if (!apiKey) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500, headers: CORS });
   }
@@ -159,7 +170,7 @@ export async function GET(req: NextRequest) {
     const params = new URLSearchParams({ limit: String(fetchLimit), page, orderBy: "createdAt" });
     if (category) params.set("category", category);
 
-    const upstream = await fetch(`https://atypica.ai/api/pulse?${params}`, {
+    const upstream = await fetch(`${upstreamBaseUrl}/api/pulse?${params}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
 
@@ -195,7 +206,7 @@ export async function GET(req: NextRequest) {
     // Apply limit and rank
     topics = topics.slice(0, parseInt(limit)).map((t, i) => ({ ...t, rank: i + 1 }));
 
-    topics = await Promise.all(topics.map((topic) => enrichPulseTopic(topic, apiKey)));
+    topics = await Promise.all(topics.map((topic) => enrichPulseTopic(topic, apiKey, upstreamBaseUrl)));
 
     // Translate titles if zh
     let translated = false;
