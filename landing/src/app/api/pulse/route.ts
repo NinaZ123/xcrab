@@ -61,20 +61,58 @@ function normalizeUrl(url: string): string {
   return url.replace(/\/$/, "");
 }
 
+function numericField(record: Record<string, unknown>, key: string): number {
+  const value = record[key];
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/,/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function scorePost(record: Record<string, unknown>): number {
+  const directScore =
+    numericField(record, "heatScore") ||
+    numericField(record, "hotScore") ||
+    numericField(record, "score") ||
+    numericField(record, "engagementScore");
+
+  if (directScore > 0) return directScore;
+
+  return (
+    numericField(record, "likeCount") +
+    numericField(record, "likes") +
+    numericField(record, "retweetCount") * 2 +
+    numericField(record, "repostCount") * 2 +
+    numericField(record, "replyCount") * 2 +
+    numericField(record, "quoteCount") * 2 +
+    numericField(record, "bookmarkCount") +
+    numericField(record, "viewCount") * 0.01 +
+    numericField(record, "impressionCount") * 0.01
+  );
+}
+
 function extractTwitterSourceUrls(posts: Array<Record<string, unknown>>): string[] {
   const urlRegex = /https?:\/\/(?:x|twitter)\.com\/[^\s"')\]}]+/gi;
   const discovered = new Set<string>();
+  const sourceCandidates: Array<{ url: string; score: number; index: number }> = [];
 
-  for (const post of posts) {
+  posts.forEach((post, index) => {
     const payload = JSON.stringify(post);
     const matches = payload.match(urlRegex);
-    if (!matches) continue;
+    if (!matches) return;
     for (const rawUrl of matches) {
-      discovered.add(normalizeUrl(rawUrl));
+      const url = normalizeUrl(rawUrl);
+      if (discovered.has(url)) continue;
+      discovered.add(url);
+      sourceCandidates.push({ url, score: scorePost(post), index });
     }
-  }
+  });
 
-  return [...discovered].sort((left, right) => left.length - right.length);
+  return sourceCandidates
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map((candidate) => candidate.url);
 }
 
 async function enrichPulseTopic(
@@ -204,24 +242,26 @@ export async function GET(req: NextRequest) {
     }
 
     // Apply limit and rank
-    topics = topics.slice(0, parseInt(limit)).map((t, i) => ({ ...t, rank: i + 1 }));
-
-    topics = await Promise.all(topics.map((topic) => enrichPulseTopic(topic, apiKey, upstreamBaseUrl)));
+    let enrichedTopics = await Promise.all(
+      topics
+        .slice(0, parseInt(limit))
+        .map((t, i) => enrichPulseTopic({ ...t, rank: i + 1 }, apiKey, upstreamBaseUrl))
+    );
 
     // Translate titles if zh
     let translated = false;
-    if (lang === "zh" && topics.length > 0) {
+    if (lang === "zh" && enrichedTopics.length > 0) {
       const ppioKey = process.env.PPIO_API_KEY;
       if (ppioKey) {
         const zhTitles = await translateTitles(
-          topics.map((t) => t.title),
+          enrichedTopics.map((t) => t.title),
           ppioKey
         );
         // Check if translation actually happened (not just returned originals)
-        const didTranslate = zhTitles.some((zh, i) => zh !== topics[i].title);
+        const didTranslate = zhTitles.some((zh, i) => zh !== enrichedTopics[i].title);
         if (didTranslate) {
           translated = true;
-          topics = topics.map((t, i) => ({
+          enrichedTopics = enrichedTopics.map((t, i) => ({
             ...t,
             titleEn: t.title,
             title: zhTitles[i],
@@ -230,7 +270,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const result = { topics, pagination: json.pagination, updatedAt: new Date().toISOString(), lang };
+    const result = { topics: enrichedTopics, pagination: json.pagination, updatedAt: new Date().toISOString(), lang };
 
     // Only cache if translation succeeded (or lang=en). Don't cache failed translations.
     const shouldCache = lang !== "zh" || translated;

@@ -6,6 +6,7 @@ let allTopics = [];
 let activeCategory = '';
 let currentLocale = '';
 let currentSort = 'heatScore';
+let currentOpenMode = 'hotPost';
 let dialogTopic = null;
 let isPending = false;
 
@@ -59,6 +60,9 @@ const labels = {
     hot:'🔥 热门',
     newest:'🕐 最新',
     originalPosts:'原帖列表',
+    openPulse:'打开热点',
+    openHottestPost:'打开最热原帖',
+    showModal:'弹窗模式',
     cannotReachApi:'无法连接接口。',
     noSourcePosts:'暂无原帖',
     connected:'已连接',
@@ -88,6 +92,9 @@ const labels = {
     hot:'🔥 Hot',
     newest:'🕐 New',
     originalPosts:'Original Posts',
+    openPulse:'Open pulse',
+    openHottestPost:'Open hottest post',
+    showModal:'Show modal',
     cannotReachApi:'Cannot reach API.',
     noSourcePosts:'No source posts available.',
     connected:'Connected',
@@ -108,6 +115,8 @@ const refreshTip = document.getElementById('refreshTip');
 const sortLabel = document.getElementById('sortLabel');
 const saveSettingsButton = document.getElementById('saveSettings');
 const metaLeft = document.querySelector('.meta-left');
+const pulseOpenModeSelect = document.getElementById('pulseOpenMode');
+const openModeLabel = document.getElementById('openModeLabel');
 
 function renderOpinionPanel(opinionSummary) {
   if (!sourceDialogOpinion) return;
@@ -168,6 +177,13 @@ function updateStaticText() {
   if (sortLabel) sortLabel.textContent = t('sortBy');
   if (sortHeatBtn) sortHeatBtn.textContent = t('hot');
   if (sortTimeBtn) sortTimeBtn.textContent = t('newest');
+  if (openModeLabel) openModeLabel.textContent = t('openPulse');
+  if (pulseOpenModeSelect) {
+    const hotPostOption = pulseOpenModeSelect.querySelector('option[value="hotPost"]');
+    const modalOption = pulseOpenModeSelect.querySelector('option[value="modal"]');
+    if (hotPostOption) hotPostOption.textContent = t('openHottestPost');
+    if (modalOption) modalOption.textContent = t('showModal');
+  }
   if (sourceDialogSectionTitle) sourceDialogSectionTitle.textContent = t('originalPosts');
   if (saveSettingsButton && !isPending) saveSettingsButton.textContent = t('saveSettings');
 }
@@ -215,6 +231,30 @@ function openSourceDialog(topic) {
   }
 
   sourceDialogBackdrop.classList.add('visible');
+}
+
+function getHottestSourceUrl(topic) {
+  const sourceUrls = Array.isArray(topic.sourceUrls) ? topic.sourceUrls.filter(Boolean) : [];
+  return topic.sourceUrl || sourceUrls[0] || topic.searchUrl || null;
+}
+
+function openUrl(url) {
+  if (!url) return;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function openTopic(topic) {
+  if (currentOpenMode === 'modal') {
+    openSourceDialog(topic);
+    return;
+  }
+
+  const url = getHottestSourceUrl(topic);
+  if (url) {
+    openUrl(url);
+  } else {
+    openSourceDialog(topic);
+  }
 }
 
 sourceDialogClose.addEventListener('click', closeSourceDialog);
@@ -316,7 +356,7 @@ function renderTrends(topics) {
       </div>
     `;
     div.addEventListener('click', () => {
-      openSourceDialog(topic);
+      openTopic(topic);
     });
     listEl.appendChild(div);
   });
@@ -401,6 +441,8 @@ function loadSettings() {
     if (!s) return;
     document.getElementById('locale').value = s.locale || 'en-US';
     document.getElementById('limit').value = String(s.limit || 20);
+    currentOpenMode = s.pulseOpenMode || 'hotPost';
+    if (pulseOpenModeSelect) pulseOpenModeSelect.value = currentOpenMode;
     currentLocale = s.locale || '';
     currentSort = s.orderBy || 'heatScore';
     sortHeatBtn.classList.toggle('active', currentSort === 'heatScore');
@@ -417,8 +459,10 @@ document.getElementById('saveSettings').addEventListener('click', async () => {
       locale: document.getElementById('locale').value,
       limit: parseInt(document.getElementById('limit').value, 10) || 20,
       orderBy: currentSort,
+      pulseOpenMode: pulseOpenModeSelect?.value || 'hotPost',
     };
     currentLocale = settings.locale;
+    currentOpenMode = settings.pulseOpenMode;
     updateStaticText();
     setPendingState(true);
 
