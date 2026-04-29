@@ -7,6 +7,7 @@ importScripts('config.js');
 
 const DEFAULT_SETTINGS = {
   limit: 20,
+  pulseOpenMode: 'hotPost',
 };
 
 async function ensureSettings() {
