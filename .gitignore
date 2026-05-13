@@ -36,3 +36,17 @@ logs/
 # Temporary files
 tmp/
 temp/
+
+# Claude Code
+.claude/
+
+# Testing files
+*-test.html
+test-*.html
+debug-*.html
+debug-*.js
+*-debug.md
+test-*.md
+*-test.json
+clear-cache.html
+open-cache-manager.bat

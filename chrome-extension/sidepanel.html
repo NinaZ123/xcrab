@@ -21,24 +21,6 @@
     .header h1 { font-size: 16px; font-weight: 700; }
     .header-actions { display: flex; gap: 6px; align-items: center; }
 
-    .refresh-wrap {
-      position: relative;
-      display: inline-block;
-    }
-    .refresh-label {
-      border: 1px solid #eee; background: #fafafa; color: #999;
-      border-radius: 999px; font-size: 11px;
-      padding: 5px 10px; cursor: default;
-    }
-    .refresh-wrap .refresh-tip {
-      display: none;
-      position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-      margin-top: 6px; padding: 5px 10px;
-      background: #333; color: #fff; font-size: 11px;
-      border-radius: 6px; white-space: nowrap; z-index: 10;
-    }
-    .refresh-wrap:hover .refresh-tip { display: block; }
-
     .btn-icon {
       border: none; background: none; color: #999;
       font-size: 16px; cursor: pointer; padding: 4px; border-radius: 6px;
@@ -251,10 +233,6 @@
   <div class="header">
     <h1>🦀 XCrab</h1>
     <div class="header-actions">
-      <div class="refresh-wrap">
-        <span class="refresh-label" id="refreshLabel">Auto</span>
-        <span class="refresh-tip" id="refreshTip">Daily auto-refresh · 每日自动刷新</span>
-      </div>
       <button class="btn-icon" id="settingsToggle" title="Settings">⚙</button>
     </div>
   </div>
