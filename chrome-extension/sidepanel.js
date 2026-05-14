@@ -102,6 +102,53 @@ const labels = {
 };
 function t(key) { return (labels[currentLocale] || labels.en)[key] || labels.en[key]; }
 
+// Category translations (fallback map for old data)
+const categoryMapFallback = {
+  'zh-CN': {
+    'Tech': '科技',
+    'Business': '商业',
+    'Entertainment': '娱乐',
+    'Sports': '体育',
+    'Politics': '政治',
+    'Science': '科学',
+    'Health': '健康',
+    'World': '国际',
+    'Finance': '财经',
+    'Culture': '文化',
+    'Education': '教育',
+    'Lifestyle': '生活',
+    'Gaming': '游戏',
+    'Fashion': '时尚',
+    'Food': '美食',
+    'Travel': '旅游',
+    'Auto': '汽车',
+    'Real Estate': '房产',
+    'Military': '军事',
+    'AI': '人工智能',
+    'Crypto': '加密货币',
+    'Climate': '气候',
+    'Space': '航天',
+  },
+  'en': {}
+};
+
+function translateCategory(topic) {
+  if (!topic || !topic.category) return '';
+  const isChinese = currentLocale === 'zh-CN';
+
+  // Use backend-provided translations if available
+  if (isChinese && topic.categoryZh) {
+    return topic.categoryZh;
+  } else if (!isChinese && topic.categoryEn) {
+    return topic.categoryEn;
+  }
+
+  // Fallback to hardcoded map
+  return isChinese
+    ? (categoryMapFallback['zh-CN'][topic.category] || topic.category)
+    : topic.category;
+}
+
 const sourceDialogBackdrop = document.getElementById('sourceDialogBackdrop');
 const sourceDialogClose = document.getElementById('sourceDialogClose');
 const sourceDialogTitle = document.getElementById('sourceDialogTitle');
@@ -110,8 +157,6 @@ const sourceDialogSectionTitle = document.getElementById('sourceDialogSectionTit
 const sourceDialogDescription = document.getElementById('sourceDialogDescription');
 const sourceDialogOpinion = document.getElementById('sourceDialogOpinion');
 const sourceDialogList = document.getElementById('sourceDialogList');
-const refreshLabel = document.getElementById('refreshLabel');
-const refreshTip = document.getElementById('refreshTip');
 const sortLabel = document.getElementById('sortLabel');
 const saveSettingsButton = document.getElementById('saveSettings');
 const metaLeft = document.querySelector('.meta-left');
@@ -172,8 +217,6 @@ function closeSourceDialog() {
 }
 
 function updateStaticText() {
-  if (refreshLabel) refreshLabel.textContent = 'Auto';
-  if (refreshTip) refreshTip.textContent = t('autoTip');
   if (sortLabel) sortLabel.textContent = t('sortBy');
   if (sortHeatBtn) sortHeatBtn.textContent = t('hot');
   if (sortTimeBtn) sortTimeBtn.textContent = t('newest');
@@ -207,7 +250,11 @@ function setPendingState(pending) {
 function openSourceDialog(topic) {
   dialogTopic = topic;
   const sourceUrls = Array.isArray(topic.sourceUrls) ? topic.sourceUrls : [];
-  sourceDialogTitle.textContent = topic.name || t('sourcePosts');
+  const isChinese = currentLocale === 'zh-CN';
+  const displayTitle = isChinese
+    ? (topic.titleZh || topic.name)
+    : (topic.titleEn || topic.name);
+  sourceDialogTitle.textContent = displayTitle || t('sourcePosts');
   sourceDialogSubtitle.textContent = t('chooseSource');
   sourceDialogDescription.textContent = topic.content || '';
   renderOpinionPanel(topic.opinionSummary);
@@ -301,7 +348,11 @@ function renderCategories(topics) {
   for (const cat of cats) {
     const chip = document.createElement('span');
     chip.className = 'cat-chip' + (activeCategory === cat ? ' active' : '');
-    chip.textContent = cat;
+
+    // Find a topic with this category to get translation
+    const topicWithCat = topics.find(t => t.category === cat);
+    chip.textContent = topicWithCat ? translateCategory(topicWithCat) : cat;
+
     chip.onclick = () => { activeCategory = cat; renderCategories(allTopics); renderTrends(allTopics); };
     bar.appendChild(chip);
   }
@@ -338,16 +389,22 @@ function renderTrends(topics) {
     const desc = topic.content ? `<div class="desc">${escapeHtml(topic.content)}</div>` : '';
     const dateStr = topic.createdAt ? `<span class="date-label">${formatDate(topic.createdAt)}</span>` : '';
 
+    // Choose title based on current locale
+    const isChinese = currentLocale === 'zh-CN';
+    const displayTitle = isChinese
+      ? (topic.titleZh || topic.name)   // 中文模式：优先 titleZh
+      : (topic.titleEn || topic.name);  // 英文模式：优先 titleEn
+
     const div = document.createElement('div');
     div.className = 'trend-item';
     div.innerHTML = `
       <div class="rank">${i + 1}</div>
       <div>
-        <div class="name">${escapeHtml(topic.name)}</div>
+        <div class="name">${escapeHtml(displayTitle)}</div>
         ${desc}
         <div class="sub">
           ${deltaStr}
-          <span class="tag">${escapeHtml(topic.category)}</span>
+          <span class="tag">${escapeHtml(translateCategory(topic))}</span>
           ${dateStr}
         </div>
       </div>
@@ -416,6 +473,20 @@ chrome.storage.onChanged.addListener((changes) => {
       renderCategories(allTopics);
       renderTrends(allTopics);
       updateMeta(data);
+    } else if (data && data.topics?.length === 0) {
+      // Cache cleared - show empty state
+      allTopics = [];
+      document.getElementById('catBar').innerHTML = '';
+      document.getElementById('trendList').innerHTML = '';
+      document.getElementById('emptyState').innerHTML = `<div class="empty-icon">🦀</div>${escapeHtml(t('noTrends'))}`;
+      document.getElementById('emptyState').style.display = 'block';
+    } else if (changes.xcrabTrends.newValue === undefined) {
+      // Cache was deleted - clear everything
+      allTopics = [];
+      document.getElementById('catBar').innerHTML = '';
+      document.getElementById('trendList').innerHTML = '';
+      document.getElementById('emptyState').innerHTML = `<div class="empty-icon">🦀</div>${escapeHtml(t('noTrends'))}`;
+      document.getElementById('emptyState').style.display = 'block';
     }
   }
   if (changes.xcrabError && changes.xcrabError.newValue && !isPending) {
@@ -461,9 +532,23 @@ document.getElementById('saveSettings').addEventListener('click', async () => {
       orderBy: currentSort,
       pulseOpenMode: pulseOpenModeSelect?.value || 'hotPost',
     };
+
+    const localeChanged = currentLocale !== settings.locale;
     currentLocale = settings.locale;
     currentOpenMode = settings.pulseOpenMode;
     updateStaticText();
+
+    // If locale changed and we have data, re-render with new locale
+    if (localeChanged && allTopics.length > 0) {
+      console.log('[XCrab] Locale changed, re-rendering with new locale:', currentLocale);
+      renderCategories(allTopics);
+      renderTrends(allTopics);
+    } else if (!localeChanged && allTopics.length > 0) {
+      // Settings changed but not locale, re-render
+      renderCategories(allTopics);
+      renderTrends(allTopics);
+    }
+
     setPendingState(true);
 
     chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings }, () => {

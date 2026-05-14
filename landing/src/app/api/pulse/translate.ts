@@ -87,3 +87,89 @@ export async function translateTitles(
 
   return results;
 }
+
+// Translate Chinese to English
+export async function translateToEnglish(
+  titles: string[],
+  apiKey: string
+): Promise<string[]> {
+  const results: string[] = new Array(titles.length);
+  const uncached: { i: number; title: string }[] = [];
+
+  for (let i = 0; i < titles.length; i++) {
+    const cacheKey = `zh2en:${titles[i]}`;
+    const cached = translationCache.get(cacheKey);
+    if (cached) {
+      results[i] = cached;
+    } else {
+      uncached.push({ i, title: titles[i] });
+    }
+  }
+
+  if (uncached.length === 0) return results;
+
+  const numbered = uncached.map((t, j) => `${j + 1}. ${t.title}`).join("\n");
+
+  try {
+    const res = await fetch(PPIO_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Translate these Chinese headlines to concise English. Return ONLY a JSON array of strings in the same order. No markdown.",
+          },
+          {
+            role: "user",
+            content: `${numbered}\n\nReturn: ["English1","English2",...]`,
+          },
+        ],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!res.ok) {
+      console.log("[TranslateToEN] API error:", res.status, await res.text().then(t => t.slice(0, 200)));
+      for (const item of uncached) results[item.i] = item.title;
+      return results;
+    }
+
+    const data = await res.json();
+    let text: string = data.choices?.[0]?.message?.content?.trim() || "";
+    console.log("[TranslateToEN] Raw response:", text.slice(0, 300));
+
+    if (text.startsWith("```")) {
+      text = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    }
+
+    const jsonStart = text.indexOf("[");
+    const jsonEnd = text.lastIndexOf("]");
+    if (jsonStart >= 0 && jsonEnd > jsonStart) {
+      text = text.slice(jsonStart, jsonEnd + 1);
+    }
+
+    const translated: string[] = JSON.parse(text);
+
+    for (let j = 0; j < uncached.length; j++) {
+      const item = uncached[j];
+      const en = translated[j];
+      if (en && typeof en === "string") {
+        results[item.i] = en;
+        translationCache.set(`zh2en:${item.title}`, en);
+      } else {
+        results[item.i] = item.title;
+      }
+    }
+  } catch (err) {
+    console.log("[TranslateToEN] Error:", err instanceof Error ? err.message : String(err));
+    for (const item of uncached) results[item.i] = item.title;
+  }
+
+  return results;
+}
