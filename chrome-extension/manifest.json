@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "XCrab",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "X trending topics tracker powered by Atypica Pulse",
   "permissions": ["storage", "sidePanel", "alarms"],
   "host_permissions": ["https://xcrab.net/*", "http://localhost/*", "http://127.0.0.1/*"],
