@@ -343,7 +343,7 @@ export async function GET(req: NextRequest) {
     // Apply limit and rank
     let enrichedTopics = await Promise.all(
       topics
-        .slice(0, parseInt(limit))
+        .slice(0, limit)
         .map((t, i) => enrichPulseTopic({ ...t, rank: i + 1 }, apiKey, upstreamBaseUrl))
     );
 
@@ -535,7 +535,7 @@ export async function GET(req: NextRequest) {
     const originalCount = enrichedTopics.length;
     const seenTitles = new Map<string, typeof enrichedTopics[0]>();
     enrichedTopics.forEach((topic) => {
-      const key = topic.titleEn.toLowerCase().trim();
+      const key = (topic.titleEn ?? '').toLowerCase().trim();
       const existing = seenTitles.get(key);
       if (!existing || topic.heatScore > existing.heatScore) {
         seenTitles.set(key, topic);
@@ -547,7 +547,7 @@ export async function GET(req: NextRequest) {
 
     // Update cache with full bilingual data
     cache.data = {
-      topics: enrichedTopics,
+      topics: enrichedTopics as CacheData['topics'],
       fetchedAt: Date.now(),
       fetchedLimit: enrichedTopics.length,
       orderBy,
